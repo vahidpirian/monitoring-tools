@@ -1,0 +1,38 @@
+version: '3.5'
+
+networks:
+  monitoring-net:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.18.1.0/24
+
+services:
+  mysql-server:
+    image: mariadb:10.5
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./zbx_vol/var/lib/mysql:/var/lib/mysql:rw
+      - ./config/conf.d:/etc/mysql/conf.d
+    command:
+      - mysqld
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_bin
+      - --skip-character-set-client-handshake
+      - --default-authentication-plugin=mysql_native_password
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 250M
+          cpus: '0.1'
+    env_file:
+      - ./env/.env_mysql
+    stop_grace_period: 1m
+    networks:
+      monitoring-net:
+
