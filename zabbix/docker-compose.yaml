@@ -36,3 +36,93 @@ services:
     networks:
       monitoring-net:
 
+  zabbix-server:
+    image: zabbix/zabbix-server-mysql:alpine-6.2-latest
+    container_name: zabbix-server
+    hostname: zabbix
+    restart: unless-stopped
+    ports:
+      - "10051:10051"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./zbx_vol/var/lib/zabbix/mibs:/var/lib/zabbix/mibs:ro
+      - ./zbx_vol/var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
+      - ./zbx_vol/var/lib/zabbix/export:/var/lib/zabbix/export:rw
+      - ./zbx_vol/usr/lib/zabbix/alertscripts:/usr/lib/zabbix/alertscripts:ro
+      - ./zbx_vol/usr/lib/zabbix/externalscripts:/usr/lib/zabbix/externalscripts:ro
+      - ./zbx_vol/var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
+      - ./zbx_vol/var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
+      # - snmptraps:/var/lib/zabbix/snmptraps:rw
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.95'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    env_file:
+      - ./env/.env_mysql
+    depends_on:
+      - mysql-server
+    networks:
+      monitoring-net:
+
+  zabbix-web-front:
+    image: zabbix/zabbix-web-nginx-mysql:alpine-6.2-latest
+    container_name: zabbix-web
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./zbx_vol/usr/share/zabbix/modules/:/usr/share/zabbix/modules/:ro
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.95'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    env_file:
+      - ./env/.env_mysql
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      - mysql-server
+    networks:
+      monitoring-net:
+
+  zabbix-agent:
+    image: zabbix/zabbix-agent:alpine-6.2-latest
+    container_name: zabbix-agent
+    restart: unless-stopped
+    ports:
+      - "10050:10050"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./zbx_vol/etc/zabbix/zabbix_agentd.d:/etc/zabbix/zabbix_agentd.d:ro
+      - ./zbx_vol/var/lib/zabbix/enc:/var/lib/zabbix/enc:ro
+      - ./zbx_vol/var/lib/zabbix/modules:/var/lib/zabbix/modules:ro
+      - ./zbx_vol/var/lib/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
+    env_file:
+      - ./env/.env_agent
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.95'
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+    networks:
+      monitoring-net:
+
