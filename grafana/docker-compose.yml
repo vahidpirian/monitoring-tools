@@ -1,0 +1,61 @@
+version: '3.5'
+
+networks:
+  monitoring:
+    external: true
+
+############################################################################
+# Because of using an xternal network, we've used the above section        #
+# And, if you want to create a separate network, you shall use below       #
+# section                                                                  #
+#                                                                          #
+# networks:                                                                #
+#   monitoring-net:                                                        #
+#     name: monitoring                                                     #
+#     bridge: driver                                                       #
+#     ipam:                                                                #
+#       config:                                                            #
+#         - subnet: 172.18.1.0/24                                          #
+############################################################################
+        
+services:
+  grafana:
+    image: grafana/grafana-enterprise
+    hostname: grafana
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    user: '0'
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.95'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    networks:
+      monitoring:
+
+  influxdb:
+    image: influxdb
+    hostname: influxdb
+    container_name: influxdb
+    restart: unless-stopped
+    ports:
+      - '8086:8086'
+    volumes:
+      - ./data/influxdb2:/var/lib/influxdb2
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.95'
+        reservations:
+          memory: 512M
+          cpus: '0.5'    
+    networks:
+      monitoring:
