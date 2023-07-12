@@ -2,6 +2,7 @@ version: '3.5'
 
 networks:
   monitoring-net:
+    name: monitoring
     driver: bridge
     ipam:
       config:
