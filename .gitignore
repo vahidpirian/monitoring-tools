@@ -1,3 +1,4 @@
 zabbix/config/
 zabbix/zbx_vol/
 grafana/config/
+grafana/data
