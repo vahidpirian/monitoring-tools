@@ -1,0 +1,69 @@
+version: '3.9'
+
+networks:
+  monitoring:
+    external: true
+
+services:
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    hostname: metabase
+    volumes:
+      - ./metabase-data:/metabase-data
+    restart: unless-stopped
+    ports: 
+      - 3000:3000
+    networks:
+      monitoring:
+    environment:
+      - MB_DB_PORT=${DB_SERVER_PORT}
+      - MB_DB_USER=${MARIADB_USER}
+      - MB_DB_PASS=${MARIADB_PASSWORD}
+      - MB_DB_DBNAME=${MARIADB_DATABASE}
+      - MB_DB_HOST=${DB_SERVER_HOST}
+      - MB_JETTY_PORT=3000
+    healthcheck:
+      test: curl --fail -I http://localhost:3000/api/health || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.95'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  metabase-mariadb:
+    image: mariadb:10.5
+    container_name: metabase-mariadb
+    hostname: metabase
+    restart: unless-stopped
+    ports:
+      - 33060:33060
+    volumes:
+      - ./metabase/var/lib/mysql:/var/lib/mysql:rw
+      - ./metabase/config.d:/etc/mysql/conf.d
+    command:
+      - mysqld
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_bin
+      - --skip-character-set-client-handshake
+      - --default-authentication-plugin=mysql_native_password
+    env_file:
+      - ./.env
+    stop_grace_period: 1m
+    networks:
+      monitoring:
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.95'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
