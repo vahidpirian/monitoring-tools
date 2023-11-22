@@ -90,6 +90,7 @@ services:
           cpus: '0.5'
     env_file:
       - ./env/.env_mysql
+      - ./env/.env_web
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
